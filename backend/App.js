@@ -6,18 +6,44 @@ const io = new Server(httpServer,{
         origin: "*"
     }
 })
-
+let counter = 1
 io.on("connection",socket => {
-    console.log("Хтось підключився з id = "+socket.id)
+    const date = new Date().toLocaleTimeString()
+    console.log("Дата = " + date)
+    let nameClient = "ім'я клієнта-"+counter
+    console.log("Ім'я = " + nameClient)
+    socket.name = nameClient
+    socket.date = date
+    const obj = {
+        nameClient:socket.name,
+        dateClient:socket.date
+    }
+    io.emit("welcomeMessage",obj)
+    counter++
 
     socket.on("disconnect",()=>{
         console.log("Клієнт з id = "+socket.id+" від'єднався")
     })
         
     socket.on("canal2",(dataFromClient)=>{
-        console.log(dataFromClient+" це дані від серверу")
-        io.emit("canal2",dataFromClient+" серверна приставка")
-    })    
+        console.log(dataFromClient+" це повідомлення від серверу")
+            //Те що видається всім клієнтам
+        const data = {
+            message:dataFromClient,
+            date:date,
+            name:socket.name
+        }
+        io.emit("canal2",data)
+    })
+    socket.on("changeName",(data)=>{
+        const newData = {
+            newName:data.newName,
+            message: `Користувач ${data.oldName} змінив ім'я на ${data.newName}`
+        }
+        socket.name = data.newName
+        console.log("socketName = "+socket.name)
+        io.emit("changeName",newData)
+    })
 })
 
 
@@ -30,3 +56,7 @@ io.on("connection",socket => {
         console.log("Помилка на сервері")
         console.log(err)
     }
+//Чому незророзуміле підключення і видалення повідомлень в браузері після перезавантаження серверу
+//Як роздробити на компоненти
+//В мене оновлюється, або через стан, або все, якщо треба...
+//...оновлювати лише частку то можна створити менший компонент і оновлювати його?
